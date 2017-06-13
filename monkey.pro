@@ -10,5 +10,7 @@ INCLUDEPATH += etool/include/ \
                catch
 
 HEADERS += \
-    lexer.h
+    lexer.h \
+    parser.h \
+    ast.h
 

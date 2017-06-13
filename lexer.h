@@ -183,7 +183,7 @@ namespace mico { namespace lexer {
         using table = etool::trees::trie::base<char, type>;
 
         static
-        bool is_space( char c )
+        bool is_whitespace( char c )
         {
             return ( c == ' '  )
                 || ( c == '\t' )
@@ -396,7 +396,7 @@ namespace mico { namespace lexer {
         static
         IterT skip_whitespaces( IterT begin, IterT end )
         {
-            while( (begin != end) && is_space( *begin ) ) {
+            while( (begin != end) && is_whitespace( *begin ) ) {
                 ++begin;
             }
             return begin;
