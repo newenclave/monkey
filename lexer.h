@@ -417,7 +417,8 @@ namespace mico { namespace lexer {
                     case type::INT_BIN:
                     case type::INT_HEX:
                     case type::INT_OCT:
-                        value = read_number( *next, bb, end );
+                        value.assign( begin, bb );
+                        value += read_number( *next, bb, end );
                         break;
                     case type::STRING:
                         value = read_string( bb, end );

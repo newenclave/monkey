@@ -11,8 +11,8 @@ TEST_CASE( "mico", "[lexer]" ) {
     SECTION( "Test mico program", "[1]" ) {
 
         std::string input =
-        "   let five = 5;                  "
-        "   let ten = 10;                  "
+        "   let five = 05;                  "
+        "   let ten = 0x10;                "
         "                                  "
         "   let add = fn(x, y) {           "
         "     x + y;                       "
@@ -40,12 +40,12 @@ TEST_CASE( "mico", "[lexer]" ) {
                 { lexer::tokens::type::LET,          "let"      },
                 { lexer::tokens::type::IDENT,        "five"     },
                 { lexer::tokens::type::ASSIGN,       "="        },
-                { lexer::tokens::type::INT,          "5"        },
+                { lexer::tokens::type::INT_OCT,      "05"       },
                 { lexer::tokens::type::SEMICOLON,    ";"        },
                 { lexer::tokens::type::LET,          "let"      },
                 { lexer::tokens::type::IDENT,        "ten"      },
                 { lexer::tokens::type::ASSIGN,       "="        },
-                { lexer::tokens::type::INT,          "10"       },
+                { lexer::tokens::type::INT_HEX,      "0x10"     },
                 { lexer::tokens::type::SEMICOLON,    ";"        },
                 { lexer::tokens::type::LET,          "let"      },
                 { lexer::tokens::type::IDENT,        "add"      },
