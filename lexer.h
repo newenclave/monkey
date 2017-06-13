@@ -112,15 +112,15 @@ namespace mico { namespace lexer {
         static
         bool is_space( char c )
         {
-            return c == ' '
-                || c == '\t'
-                || c == '\n'
-                || c == '\r'
+            return ( c == ' '  )
+                || ( c == '\t' )
+                || ( c == '\n' )
+                || ( c == '\r' )
                  ;
         }
 
         static
-        bool is_digin02( char c, bool use_under = false )
+        bool is_digit02( char c, bool use_under = false )
         {
             switch (c) {
             case '0':
@@ -133,7 +133,7 @@ namespace mico { namespace lexer {
         }
 
         static
-        bool is_digin08( char c, bool use_under = false )
+        bool is_digit08( char c, bool use_under = false )
         {
             switch (c) {
             case '0':
@@ -152,7 +152,7 @@ namespace mico { namespace lexer {
         }
 
         static
-        bool is_digin10( char c, bool use_under = false )
+        bool is_digit10( char c, bool use_under = false )
         {
             switch (c) {
             case '0':
@@ -173,7 +173,7 @@ namespace mico { namespace lexer {
         }
 
         static
-        bool is_digin16( char c, bool use_under = false )
+        bool is_digit16( char c, bool use_under = false )
         {
             switch (c) {
             case '0':
@@ -208,16 +208,16 @@ namespace mico { namespace lexer {
             num_check chker = nullptr;
             switch (num_type) {
             case type::INT:
-                chker = &is_digin10;
+                chker = &is_digit10;
                 break;
             case type::INT_BIN:
-                chker = &is_digin02;
+                chker = &is_digit02;
                 break;
             case type::INT_OCT:
-                chker = &is_digin08;
+                chker = &is_digit08;
                 break;
             case type::INT_HEX:
-                chker = &is_digin16;
+                chker = &is_digit16;
                 break;
             default:
                 break;
@@ -238,7 +238,7 @@ namespace mico { namespace lexer {
         {
             return (c >= 'a' &&  c <= 'z')
                 || (c >= 'A' &&  c <= 'Z')
-                || (c == '_')
+                || is_digit10( c, true );
                  ;
         }
 
@@ -317,7 +317,7 @@ namespace mico { namespace lexer {
                     auto bb = begin;
                     std::string value = read_ident( bb, end);
                     return std::make_pair( info(type::IDENT, value), bb );
-                } else if( is_digin10( *begin, false ) ) {
+                } else if( is_digit10( *begin, false ) ) {
                     auto bb = begin;
                     std::string value = read_number( type::INT, bb, end);
                     return std::make_pair( info(type::INT, value), bb );
