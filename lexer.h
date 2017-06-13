@@ -65,6 +65,7 @@ namespace mico { namespace lexer {
         const char *type2name( type t )
         {
             switch (t) {
+
             case type::ILLEGAL:
                 return "ILLEGAL";
             case type::END_OF_FILE:
@@ -119,7 +120,6 @@ namespace mico { namespace lexer {
                 return "{";
             case type::RBRACE:
                 return "}";
-
             case type::LBRACKET:
                 return "[";
             case type::RBRACKET:
@@ -140,6 +140,7 @@ namespace mico { namespace lexer {
             case type::RETURN:
                 return "return";
 
+            ///  avoid warnings
             case type::FIRST_VALUE_TOKEN:
             case type::LAST_VALUE_TOKEN:
                 break;
@@ -393,7 +394,7 @@ namespace mico { namespace lexer {
 
         template <typename IterT>
         static
-        IterT skip_spaces( IterT begin, IterT end )
+        IterT skip_whitespaces( IterT begin, IterT end )
         {
             while( (begin != end) && is_space( *begin ) ) {
                 ++begin;
@@ -447,7 +448,7 @@ namespace mico { namespace lexer {
         {
             std::vector<info> res;
 
-            begin = skip_spaces( begin, end );
+            begin = skip_whitespaces( begin, end );
 
             while( begin != end ) {
                 auto next = next_token( t, begin, end );
@@ -456,7 +457,7 @@ namespace mico { namespace lexer {
                     begin = end;
                 } else {
                     res.emplace_back( std::move(next.first) );
-                    begin = skip_spaces(next.second, end);
+                    begin = skip_whitespaces(next.second, end);
                 }
             }
 
