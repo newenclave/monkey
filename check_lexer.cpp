@@ -2,15 +2,11 @@
 #include "lexer.h"
 
 using namespace mico;
+using namespace mico::lexer;
 
 TEST_CASE( "mico", "[lexer]" ) {
 
-    auto tt = lexer::tokens::all( );
-
-    struct expect {
-        lexer::tokens::type t;
-        std::string         literal;
-    };
+    auto tt = tokens::all( );
 
     SECTION( "Test mico program", "[1]" ) {
 
@@ -40,7 +36,7 @@ TEST_CASE( "mico", "[lexer]" ) {
         "   {\"foo\": \"bar\"}             "
         ;
 
-        std::vector<expect> results = {
+        std::vector<tokens::info> results = {
                 { lexer::tokens::type::LET,          "let"      },
                 { lexer::tokens::type::IDENT,        "five"     },
                 { lexer::tokens::type::ASSIGN,       "="        },
@@ -136,7 +132,7 @@ TEST_CASE( "mico", "[lexer]" ) {
         size_t id = 0;
 
         for( auto &token: lst ) {
-            REQUIRE( token.name    == results[id].t );
+            REQUIRE( token.name    == results[id].name );
             REQUIRE( token.literal == results[id].literal );
             id++;
         }

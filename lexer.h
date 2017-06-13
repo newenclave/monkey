@@ -408,10 +408,11 @@ namespace mico { namespace lexer {
             if( begin == end ) {
                 return std::make_pair(info(type::END_OF_FILE, "EOF"), end);
             } else {
+                auto bb = begin;
                 auto next = t.get( begin, end, true );
                 if( next ) {
                     std::string value = type2name(*next);
-                    auto bb = next.iterator( );
+                    bb = next.iterator( );
                     switch (*next) {
                     case type::INT_BIN:
                     case type::INT_HEX:
@@ -426,11 +427,9 @@ namespace mico { namespace lexer {
                     }
                     return std::make_pair( info(*next, value), bb );
                 } else if( is_ident( *begin ) ){
-                    auto bb = begin;
                     std::string value = read_ident( bb, end);
                     return std::make_pair( info(type::IDENT, value), bb );
                 } else if( is_digit10( *begin, false ) ) {
-                    auto bb = begin;
                     std::string value = read_number( type::INT, bb, end);
                     return std::make_pair( info(type::INT, value), bb );
                 } else {
