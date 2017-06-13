@@ -11,16 +11,18 @@ namespace mico { namespace lexer {
 
     struct tokens {
 
-        enum class type {
+        enum class type: std::uint16_t {
              ILLEGAL = 0
-            ,END
+            ,END_OF_FILE
             // Identifiers + literals
             ,IDENT
             ,INT
             ,INT_BIN
             ,INT_OCT
             ,INT_HEX
+            ,STRING
 
+            ,FIRST_VALUE_TOKEN = 100
             // Operators
             ,ASSIGN
             ,PLUS
@@ -29,15 +31,22 @@ namespace mico { namespace lexer {
             ,ASTERISK
             ,SLASH
 
+            ,LT
+            ,GT
+            ,EQ
+            ,NOT_EQ
+
             // Delimiters
             ,COMMA
             ,SEMICOLON
+            ,COLON
+
             ,LPAREN
             ,RPAREN
             ,LBRACE
             ,RBRACE
-            ,LT
-            ,GT
+            ,LBRACKET
+            ,RBRACKET
 
             // Keywords
             ,LET
@@ -47,6 +56,9 @@ namespace mico { namespace lexer {
             ,IF
             ,ELSE
             ,RETURN
+
+
+            ,LAST_VALUE_TOKEN
         };
 
         static
@@ -55,11 +67,13 @@ namespace mico { namespace lexer {
             switch (t) {
             case type::ILLEGAL:
                 return "ILLEGAL";
-            case type::END:
+            case type::END_OF_FILE:
                 return "EOF";
 
             case type::IDENT:
                 return "IDENT";
+            case type::STRING:
+                return "STRING";
 
             case type::INT:
             case type::INT_BIN:
@@ -67,12 +81,22 @@ namespace mico { namespace lexer {
             case type::INT_HEX:
                 return "INT";
 
+            case type::LT:
+                return "<";
+            case type::GT:
+                return ">";
+            case type::EQ:
+                return "==";
+            case type::NOT_EQ:
+                return "!=";
+
             case type::ASSIGN:
                 return "=";
             case type::PLUS:
                 return "+";
             case type::MINUS:
                 return "-";
+
             case type::BANG:
                 return "!";
             case type::ASTERISK:
@@ -84,6 +108,9 @@ namespace mico { namespace lexer {
                 return ",";
             case type::SEMICOLON:
                 return ";";
+            case type::COLON:
+                return ":";
+
             case type::LPAREN:
                 return "(";
             case type::RPAREN:
@@ -92,10 +119,11 @@ namespace mico { namespace lexer {
                 return "{";
             case type::RBRACE:
                 return "}";
-            case type::LT:
-                return "<";
-            case type::GT:
-                return ">";
+
+            case type::LBRACKET:
+                return "[";
+            case type::RBRACKET:
+                return "]";
 
             case type::LET:
                 return "let";
@@ -111,6 +139,10 @@ namespace mico { namespace lexer {
                 return "else";
             case type::RETURN:
                 return "return";
+
+            case type::FIRST_VALUE_TOKEN:
+            case type::LAST_VALUE_TOKEN:
+                break;
             }
             return "none";
         }
@@ -123,7 +155,12 @@ namespace mico { namespace lexer {
             info& operator = ( const info & ) = default;
             info& operator = ( info && ) = default;
 
-            info( type n, std::string v = "" )
+            info( type n )
+                :name(n)
+                ,literal(type2name(n))
+            { }
+
+            info( type n, std::string v )
                 :name(n)
                 ,literal(std::move(v))
             { }
@@ -297,6 +334,27 @@ namespace mico { namespace lexer {
             return res;
         }
 
+        template <typename ItrT>
+        static
+        std::string read_string( ItrT &itr, ItrT end )
+        {
+            std::string res;
+
+            for( ++itr; (itr != end) && (*itr != '"'); itr++ ) {
+                auto next = std::next(itr);
+                if( *itr == '\\' && next != end ) {
+                    itr = next;
+                }
+                res.push_back( *itr );
+            }
+
+            if( itr != end ) {
+                ++itr;
+            }
+
+            return res;
+        }
+
         static
         void add_token( table &tt, type inf )
         {
@@ -304,38 +362,29 @@ namespace mico { namespace lexer {
         }
 
         static
+        void add_token( table &tt, type inf, std::string val )
+        {
+            tt.set( val, inf );
+        }
+
+        static
         table all( )
         {
             table res;
 
-            add_token( res, type::LET       );
-            add_token( res, type::FUNCTION  );
+            static const
+            auto fvt = static_cast<std::uint16_t>(type::FIRST_VALUE_TOKEN);
 
-            add_token( res, type::TRUE      );
-            add_token( res, type::FALSE     );
-            add_token( res, type::IF        );
-            add_token( res, type::ELSE      );
-            add_token( res, type::RETURN    );
+            static const
+            auto lvt = static_cast<std::uint16_t>(type::LAST_VALUE_TOKEN);
 
-            add_token( res, type::ASSIGN    );
-            add_token( res, type::PLUS      );
-            add_token( res, type::MINUS     );
-            add_token( res, type::COMMA     );
-            add_token( res, type::SEMICOLON );
+            for( auto i = fvt + 1; i < lvt; ++i ) {
+                add_token( res, static_cast<type>(i) );
+            }
 
-            add_token( res, type::BANG      );
-            add_token( res, type::ASTERISK  );
-            add_token( res, type::SLASH     );
-
-            add_token( res, type::LT        );
-            add_token( res, type::GT        );
-            add_token( res, type::LPAREN    );
-            add_token( res, type::RPAREN    );
-            add_token( res, type::LBRACE    );
-            add_token( res, type::RBRACE    );
-            add_token( res, type::INT_BIN   );
-            add_token( res, type::INT_OCT   );
-            add_token( res, type::INT_HEX   );
+            add_token( res, type::INT_BIN, "0b"   );
+            add_token( res, type::INT_OCT, "0"    );
+            add_token( res, type::INT_HEX, "0x"   );
 
             return std::move(res);
         }
@@ -355,11 +404,11 @@ namespace mico { namespace lexer {
         std::pair<info, IterT> next_token( table &t, IterT begin, IterT end )
         {
             if( begin == end ) {
-                return std::make_pair(info(type::END), end);
+                return std::make_pair(info(type::END_OF_FILE, "EOF"), end);
             } else {
                 auto next = t.get( begin, end, true );
                 if( next ) {
-                    std::string value;
+                    std::string value = type2name(*next);
                     auto bb = next.iterator( );
                     switch (*next) {
                     case type::INT_BIN:
@@ -379,8 +428,12 @@ namespace mico { namespace lexer {
                     auto bb = begin;
                     std::string value = read_number( type::INT, bb, end);
                     return std::make_pair( info(type::INT, value), bb );
+                } else if( *begin == '"' ) {
+                    auto bb = begin;
+                    std::string value = read_string( bb, end);
+                    return std::make_pair( info(type::STRING, value), bb );
                 } else {
-                    //std::cout << *begin;
+
                 }
             }
 
@@ -393,6 +446,8 @@ namespace mico { namespace lexer {
         {
             std::vector<info> res;
 
+            begin = skip_space( begin, end );
+
             while( begin != end ) {
                 auto next = next_token( t, begin, end );
                 if( next.first.name == type::ILLEGAL ) {
@@ -404,7 +459,7 @@ namespace mico { namespace lexer {
                 }
             }
 
-            res.emplace_back( info(type::END) );
+            res.emplace_back( info(type::END_OF_FILE) );
 
             return res;
         }
