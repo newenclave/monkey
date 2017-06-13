@@ -136,7 +136,7 @@ TEST_CASE( "mico", "[lexer]" ) {
         size_t id = 0;
 
         for( auto &token: lst ) {
-            REQUIRE( token.name == results[id].t );
+            REQUIRE( token.name    == results[id].t );
             REQUIRE( token.literal == results[id].literal );
             id++;
         }

@@ -23,6 +23,7 @@ namespace mico { namespace lexer {
             ,STRING
 
             ,FIRST_VALUE_TOKEN = 100
+
             // Operators
             ,ASSIGN
             ,PLUS
@@ -56,7 +57,6 @@ namespace mico { namespace lexer {
             ,IF
             ,ELSE
             ,RETURN
-
 
             ,LAST_VALUE_TOKEN
         };
@@ -340,7 +340,7 @@ namespace mico { namespace lexer {
         {
             std::string res;
 
-            for( ++itr; (itr != end) && (*itr != '"'); itr++ ) {
+            for( ; (itr != end) && (*itr != '"'); itr++ ) {
                 auto next = std::next(itr);
                 if( *itr == '\\' && next != end ) {
                     itr = next;
@@ -382,6 +382,8 @@ namespace mico { namespace lexer {
                 add_token( res, static_cast<type>(i) );
             }
 
+            add_token( res, type::STRING,  "\""   );
+
             add_token( res, type::INT_BIN, "0b"   );
             add_token( res, type::INT_OCT, "0"    );
             add_token( res, type::INT_HEX, "0x"   );
@@ -391,7 +393,7 @@ namespace mico { namespace lexer {
 
         template <typename IterT>
         static
-        IterT skip_space( IterT begin, IterT end )
+        IterT skip_spaces( IterT begin, IterT end )
         {
             while( (begin != end) && is_space( *begin ) ) {
                 ++begin;
@@ -416,6 +418,9 @@ namespace mico { namespace lexer {
                     case type::INT_OCT:
                         value = read_number( *next, bb, end );
                         break;
+                    case type::STRING:
+                        value = read_string( bb, end );
+                        break;
                     default:
                         break;
                     }
@@ -428,10 +433,6 @@ namespace mico { namespace lexer {
                     auto bb = begin;
                     std::string value = read_number( type::INT, bb, end);
                     return std::make_pair( info(type::INT, value), bb );
-                } else if( *begin == '"' ) {
-                    auto bb = begin;
-                    std::string value = read_string( bb, end);
-                    return std::make_pair( info(type::STRING, value), bb );
                 } else {
 
                 }
@@ -446,7 +447,7 @@ namespace mico { namespace lexer {
         {
             std::vector<info> res;
 
-            begin = skip_space( begin, end );
+            begin = skip_spaces( begin, end );
 
             while( begin != end ) {
                 auto next = next_token( t, begin, end );
@@ -455,7 +456,7 @@ namespace mico { namespace lexer {
                     begin = end;
                 } else {
                     res.emplace_back( std::move(next.first) );
-                    begin = skip_space(next.second, end);
+                    begin = skip_spaces(next.second, end);
                 }
             }
 
