@@ -107,13 +107,7 @@ namespace mico { namespace lexer {
 
         };
 
-        using table = etool::trees::trie::base<char, info>;
-
-        static
-        void add_token( table &tt, std::string name, info inf )
-        {
-            tt.set(name.begin( ), name.end( ), std::move(inf));
-        }
+        using table = etool::trees::trie::base<char, type>;
 
         static
         bool is_space( char c )
@@ -260,29 +254,33 @@ namespace mico { namespace lexer {
         }
 
         static
+        void add_token( table &tt, std::string name, type inf )
+        {
+            tt.set(name.begin( ), name.end( ), inf);
+        }
+
+        static
         table all( )
         {
             table res;
 
-            add_token( res, "let",  info(type::LET) );
-            add_token( res, "fn",   info(type::FUNCTION) );
-            add_token( res, "=",    info(type::ASSIGN) );
-            add_token( res, "+",    info(type::PLUS) );
-            add_token( res, "-",    info(type::MINUS) );
-            add_token( res, ",",    info(type::COMMA) );
-            add_token( res, ";",    info(type::SEMICOLON) );
-            add_token( res, "(",    info(type::LPAREN) );
-            add_token( res, ")",    info(type::RPAREN) );
-            add_token( res, "{",    info(type::LBRACE) );
-            add_token( res, "}",    info(type::RBRACE) );
-
-            add_token( res, "0b",   info(type::INT_BIN) );
-            add_token( res, "0",    info(type::INT_OCT) );
-            add_token( res, "0x",   info(type::INT_HEX) );
+            add_token( res, "let",  type::LET       );
+            add_token( res, "fn",   type::FUNCTION  );
+            add_token( res, "=",    type::ASSIGN    );
+            add_token( res, "+",    type::PLUS      );
+            add_token( res, "-",    type::MINUS     );
+            add_token( res, ",",    type::COMMA     );
+            add_token( res, ";",    type::SEMICOLON );
+            add_token( res, "(",    type::LPAREN    );
+            add_token( res, ")",    type::RPAREN    );
+            add_token( res, "{",    type::LBRACE    );
+            add_token( res, "}",    type::RBRACE    );
+            add_token( res, "0b",   type::INT_BIN   );
+            add_token( res, "0",    type::INT_OCT   );
+            add_token( res, "0x",   type::INT_HEX   );
 
             return std::move(res);
         }
-
 
         template <typename IterT>
         static
@@ -305,16 +303,16 @@ namespace mico { namespace lexer {
                 if( next ) {
                     std::string value;
                     auto bb = next.iterator( );
-                    switch (next->name) {
+                    switch (*next) {
                     case type::INT_BIN:
                     case type::INT_HEX:
                     case type::INT_OCT:
-                        value = read_number( next->name, bb, end );
+                        value = read_number( *next, bb, end );
                         break;
                     default:
                         break;
                     }
-                    return std::make_pair( info(next->name, value), bb );
+                    return std::make_pair( info(*next, value), bb );
                 } else if( is_ident( *begin ) ){
                     auto bb = begin;
                     std::string value = read_ident( bb, end);
@@ -328,7 +326,7 @@ namespace mico { namespace lexer {
                 }
             }
 
-            return std::make_pair(info( ), begin);
+            return std::make_pair( info( ), begin);
         }
 
         template <typename IterT>
