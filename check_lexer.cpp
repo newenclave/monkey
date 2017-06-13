@@ -2,32 +2,33 @@
 #include "lexer.h"
 
 TEST_CASE( "mico", "[lexer]" ) {
-    SECTION( "Test mico program" ) {
+    SECTION( "Test mico program", "[lex1]" ) {
 
-        std::string test = "let five = 5;\n"
-                "let ten = 10;\n"
-                "let add = fn(x, y) {\n"
-                "x + y;\n"
-                "};\n"
-                "let result = add(five, ten);\n";
+        std::string test =
+                "let five = 5;                  \n"
+                "let ten = 10;                  \n"
+                "let add = fn(x, y) {           \n"
+                "x + y;                         \n"
+                "};                             \n"
+                "let result = add(five, ten);   \n";
 
         auto tt = mico::lexer::tokens::all( );
 
         std::vector<std::string> results = {
-             "LET"              ,
+             "let"              ,
             "IDENT(five)"       ,
             "="                 ,
             "INT(5)"            ,
             ";"                 ,
-            "LET"               ,
+            "let"               ,
             "IDENT(ten)"        ,
             "="                 ,
             "INT(10)"           ,
             ";"                 ,
-            "LET"               ,
+            "let"               ,
             "IDENT(add)"        ,
             "="                 ,
-            "FUN"               ,
+            "fn"                ,
             "("                 ,
             "IDENT(x)"          ,
             ","                 ,
@@ -40,7 +41,7 @@ TEST_CASE( "mico", "[lexer]" ) {
             ";"                 ,
             "}"                 ,
             ";"                 ,
-            "LET"               ,
+            "let"               ,
             "IDENT(result)"     ,
             "="                 ,
             "IDENT(add)"        ,
@@ -62,6 +63,8 @@ TEST_CASE( "mico", "[lexer]" ) {
             REQUIRE( token.to_string( ) == results[id] );
             id++;
         }
+    }
 
+    SECTION( "Test mico program", "[lex2]" ) {
     }
 }

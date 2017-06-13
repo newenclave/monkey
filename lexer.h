@@ -25,6 +25,9 @@ namespace mico { namespace lexer {
             ,ASSIGN
             ,PLUS
             ,MINUS
+            ,BANG
+            ,ASTERISK
+            ,SLASH
 
             // Delimiters
             ,COMMA
@@ -33,10 +36,17 @@ namespace mico { namespace lexer {
             ,RPAREN
             ,LBRACE
             ,RBRACE
+            ,LT
+            ,GT
 
             // Keywords
             ,LET
             ,FUNCTION
+            ,TRUE
+            ,FALSE
+            ,IF
+            ,ELSE
+            ,RETURN
         };
 
         static
@@ -47,19 +57,29 @@ namespace mico { namespace lexer {
                 return "ILLEGAL";
             case type::END:
                 return "EOF";
+
             case type::IDENT:
                 return "IDENT";
+
             case type::INT:
             case type::INT_BIN:
             case type::INT_OCT:
             case type::INT_HEX:
                 return "INT";
+
             case type::ASSIGN:
                 return "=";
             case type::PLUS:
                 return "+";
             case type::MINUS:
                 return "-";
+            case type::BANG:
+                return "!";
+            case type::ASTERISK:
+                return "*";
+            case type::SLASH:
+                return "/";
+
             case type::COMMA:
                 return ",";
             case type::SEMICOLON:
@@ -72,10 +92,25 @@ namespace mico { namespace lexer {
                 return "{";
             case type::RBRACE:
                 return "}";
+            case type::LT:
+                return "<";
+            case type::GT:
+                return ">";
+
             case type::LET:
-                return "LET";
+                return "let";
             case type::FUNCTION:
-                return "FUN";
+                return "fn";
+            case type::TRUE:
+                return "true";
+            case type::FALSE:
+                return "false";
+            case type::IF:
+                return "if";
+            case type::ELSE:
+                return "else";
+            case type::RETURN:
+                return "return";
             }
             return "none";
         }
@@ -236,6 +271,15 @@ namespace mico { namespace lexer {
         static
         bool is_ident( char c )
         {
+            return ( 'a' <= c &&  c <= 'z')
+                || ( 'A' <= c &&  c <= 'Z')
+                || ( c == '_' );
+                 ;
+        }
+
+        static
+        bool is_ident_( char c )
+        {
             return (c >= 'a' &&  c <= 'z')
                 || (c >= 'A' &&  c <= 'Z')
                 || is_digit10( c, true );
@@ -247,16 +291,16 @@ namespace mico { namespace lexer {
         std::string read_ident( ItrT &itr, ItrT end )
         {
             std::string res;
-            for(; (itr != end) && is_ident( *itr ); ++itr) {
+            for(; (itr != end) && is_ident_( *itr ); ++itr) {
                 res.push_back( *itr );
             }
             return res;
         }
 
         static
-        void add_token( table &tt, std::string name, type inf )
+        void add_token( table &tt, type inf )
         {
-            tt.set(name.begin( ), name.end( ), inf);
+            tt.set( std::string(type2name(inf) ), inf);
         }
 
         static
@@ -264,20 +308,34 @@ namespace mico { namespace lexer {
         {
             table res;
 
-            add_token( res, "let",  type::LET       );
-            add_token( res, "fn",   type::FUNCTION  );
-            add_token( res, "=",    type::ASSIGN    );
-            add_token( res, "+",    type::PLUS      );
-            add_token( res, "-",    type::MINUS     );
-            add_token( res, ",",    type::COMMA     );
-            add_token( res, ";",    type::SEMICOLON );
-            add_token( res, "(",    type::LPAREN    );
-            add_token( res, ")",    type::RPAREN    );
-            add_token( res, "{",    type::LBRACE    );
-            add_token( res, "}",    type::RBRACE    );
-            add_token( res, "0b",   type::INT_BIN   );
-            add_token( res, "0",    type::INT_OCT   );
-            add_token( res, "0x",   type::INT_HEX   );
+            add_token( res, type::LET       );
+            add_token( res, type::FUNCTION  );
+
+            add_token( res, type::TRUE      );
+            add_token( res, type::FALSE     );
+            add_token( res, type::IF        );
+            add_token( res, type::ELSE      );
+            add_token( res, type::RETURN    );
+
+            add_token( res, type::ASSIGN    );
+            add_token( res, type::PLUS      );
+            add_token( res, type::MINUS     );
+            add_token( res, type::COMMA     );
+            add_token( res, type::SEMICOLON );
+
+            add_token( res, type::BANG      );
+            add_token( res, type::ASTERISK  );
+            add_token( res, type::SLASH     );
+
+            add_token( res, type::LT        );
+            add_token( res, type::GT        );
+            add_token( res, type::LPAREN    );
+            add_token( res, type::RPAREN    );
+            add_token( res, type::LBRACE    );
+            add_token( res, type::RBRACE    );
+            add_token( res, type::INT_BIN   );
+            add_token( res, type::INT_OCT   );
+            add_token( res, type::INT_HEX   );
 
             return std::move(res);
         }
