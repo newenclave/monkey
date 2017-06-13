@@ -2,6 +2,7 @@
 #define LEXER_H
 
 #include <string>
+#include <vector>
 #include <cstdint>
 
 #include "etool/trees/trie/base.h"
@@ -89,11 +90,20 @@ namespace mico { namespace lexer {
 
             info( type n, std::string v = "" )
                 :name(n)
-                ,value(std::move(v))
+                ,literal(std::move(v))
             { }
 
+            std::string to_string( )
+            {
+                std::string res(type2name(name));
+                if( !literal.empty( ) ) {
+                    res = res + "(" + literal + ")";
+                }
+                return res;
+            }
+
             type        name = type::ILLEGAL;
-            std::string value;
+            std::string literal;
 
         };
 
@@ -165,6 +175,7 @@ namespace mico { namespace lexer {
             case '_':
                 return use_under;
             }
+            return false;
         }
 
         static
@@ -192,6 +203,40 @@ namespace mico { namespace lexer {
             case '_':
                 return use_under;
             }
+            return false;
+        }
+
+        template <typename ItrT>
+        static
+        std::string read_number( type num_type, ItrT &itr, ItrT end )
+        {
+            typedef bool (*num_check)(char, bool);
+            num_check chker = nullptr;
+            switch (num_type) {
+            case type::INT:
+                chker = &is_digin10;
+                break;
+            case type::INT_BIN:
+                chker = &is_digin02;
+                break;
+            case type::INT_OCT:
+                chker = &is_digin08;
+                break;
+            case type::INT_HEX:
+                chker = &is_digin16;
+                break;
+            default:
+                break;
+            }
+            std::string res;
+
+            for(; (itr != end) && chker(*itr, true); ++itr) {
+                if( *itr != '_' ) {
+                    res.push_back( *itr );
+                }
+            }
+
+            return res;
         }
 
         static
@@ -203,13 +248,24 @@ namespace mico { namespace lexer {
                  ;
         }
 
+        template <typename ItrT>
+        static
+        std::string read_ident( ItrT &itr, ItrT end )
+        {
+            std::string res;
+            for(; (itr != end) && is_ident( *itr ); ++itr) {
+                res.push_back( *itr );
+            }
+            return res;
+        }
+
         static
         table all( )
         {
             table res;
 
             add_token( res, "let",  info(type::LET) );
-            add_token( res, "fun",  info(type::FUNCTION) );
+            add_token( res, "fn",   info(type::FUNCTION) );
             add_token( res, "=",    info(type::ASSIGN) );
             add_token( res, "+",    info(type::PLUS) );
             add_token( res, "-",    info(type::MINUS) );
@@ -247,25 +303,63 @@ namespace mico { namespace lexer {
             } else {
                 auto next = t.get( begin, end, true );
                 if( next ) {
+                    std::string value;
+                    auto bb = next.iterator( );
                     switch (next->name) {
                     case type::INT_BIN:
                     case type::INT_HEX:
                     case type::INT_OCT:
-
+                        value = read_number( next->name, bb, end );
                         break;
                     default:
                         break;
                     }
-                    return std::make_pair( *next, next.iterator( ));
+                    return std::make_pair( info(next->name, value), bb );
+                } else if( is_ident( *begin ) ){
+                    auto bb = begin;
+                    std::string value = read_ident( bb, end);
+                    return std::make_pair( info(type::IDENT, value), bb );
+                } else if( is_digin10( *begin, false ) ) {
+                    auto bb = begin;
+                    std::string value = read_number( type::INT, bb, end);
+                    return std::make_pair( info(type::INT, value), bb );
                 } else {
-                    std::cout << *begin;
+                    //std::cout << *begin;
                 }
             }
 
             return std::make_pair(info( ), begin);
         }
 
+        template <typename IterT>
+        static
+        std::vector<info> get_list( table &t, IterT begin, IterT end )
+        {
+            std::vector<info> res;
+
+            while( begin != end ) {
+                auto next = next_token( t, begin, end );
+                if( next.first.name == type::ILLEGAL ) {
+                    res.emplace_back( std::move(next.first) );
+                    begin = end;
+                } else {
+                    res.emplace_back( std::move(next.first) );
+                    begin = skip_space(next.second, end);
+                }
+            }
+
+            res.emplace_back( info(type::END) );
+
+            return res;
+        }
     };
+
+    inline
+    std::ostream &operator << (std::ostream &o, tokens::type tt)
+    {
+        o << tokens::type2name( tt );
+        return o;
+    }
 
 } }
 
