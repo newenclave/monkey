@@ -8,13 +8,37 @@
 
 #include "lexer.h"
 
+#include "parser.h"
+
 using namespace mico;
 
 int main(int argc, char *argv[])
 {
 
-    int result = Catch::Session( ).run( argc, argv );
-    return ( result < 0xff ? result : 0xff );
+    std::string input =
+            "let x  5;             "
+            "let y = 10 ;            "
+            "let 838383;   "
+            "return add(100);"
+            "return 5+6;"
+            ;
+    auto tt  = lexer::tokens::all( );
+    auto lst = lexer::tokens::get_list( tt, input.begin( ), input.end( ) );
+
+    parser::token_reader token_reader(std::move(lst));
+    auto prog = token_reader.parse( );
+
+
+    for( auto &e: token_reader.errors_ ) {
+        std::cout << e << "\n";
+    }
+
+    for( auto &l: prog.states ) {
+        std::cout << l->token( ) << "\n";
+    }
+
+//    int result = Catch::Session( ).run( argc, argv );
+//    return ( result < 0xff ? result : 0xff );
 
     return 0;
 }

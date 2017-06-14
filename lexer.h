@@ -166,7 +166,7 @@ namespace mico { namespace lexer {
                 ,literal(std::move(v))
             { }
 
-            std::string to_string( )
+            std::string to_string( ) const
             {
                 std::string res(type2name(name));
                 if( !literal.empty( ) ) {
