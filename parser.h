@@ -128,10 +128,6 @@ namespace mico { namespace parser {
                 advance( );
             }
 
-            if(current_is( type::SEMICOLON )) {
-                advance( );
-            }
-
             return res;
         }
 
@@ -141,10 +137,6 @@ namespace mico { namespace parser {
             std::unique_ptr<ast::return_statement>
                     res(new ast::return_statement);
             while( !eof( ) && !current_is( type::SEMICOLON ) ) {
-                advance( );
-            }
-
-            if(current_is( type::SEMICOLON )) {
                 advance( );
             }
             return res;
@@ -164,12 +156,12 @@ namespace mico { namespace parser {
                     stmt = parse_return( );
                     break;
                 default:
-                    advance( );
                     break;
                 }
                 if( stmt ) {
                     res.states.emplace_back( std::move(stmt) );
                 }
+                advance( );
             }
 
             return res;
