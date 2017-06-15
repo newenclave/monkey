@@ -11,6 +11,8 @@ namespace mico { namespace ast {
         NONE = 0,
         STATE,
         EXPR,
+        STATE_LET,
+        STATE_RETURN,
     };
 
     struct node {
@@ -64,6 +66,11 @@ namespace mico { namespace ast {
     };
 
     struct let_statement: public statement {
+        node_type type( ) const
+        {
+            return node_type::STATE_LET;
+        }
+
         lexer::tokens::type token( ) const
         {
             return lexer::tokens::type::LET;
@@ -73,6 +80,12 @@ namespace mico { namespace ast {
     };
 
     struct return_statement: public statement {
+
+        node_type type( ) const
+        {
+            return node_type::STATE_RETURN;
+        }
+
         lexer::tokens::type token( ) const
         {
             return lexer::tokens::type::RETURN;

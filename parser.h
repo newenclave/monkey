@@ -169,6 +169,7 @@ namespace mico { namespace parser {
         token_itr   current_;
         token_itr   peek_;
         mutable std::vector<std::string> errors_;
+        //std::map<type, >
     };
 
 }}

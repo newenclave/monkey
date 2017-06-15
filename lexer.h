@@ -344,9 +344,31 @@ namespace mico { namespace lexer {
             for( ; (itr != end) && (*itr != '"'); itr++ ) {
                 auto next = std::next(itr);
                 if( *itr == '\\' && next != end ) {
+                    switch (*next) {
+                    case 'n':
+                        res.push_back('\n');
+                        break;
+                    case 'r':
+                        res.push_back('\r');
+                        break;
+                    case 't':
+                        res.push_back('\t');
+                        break;
+                    case '\\':
+                        res.push_back('\\');
+                        break;
+                    case '"':
+                        res.push_back('"');
+                        break;
+                    default:
+                        res.push_back('\\');
+                        res.push_back(*next);
+                        break;
+                    }
                     itr = next;
+                } else {
+                    res.push_back( *itr );
                 }
-                res.push_back( *itr );
             }
 
             if( itr != end ) {
