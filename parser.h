@@ -2,6 +2,7 @@
 #define PARSER_H
 
 #include <vector>
+#include <functional>
 
 #include "lexer.h"
 #include "ast.h"
@@ -22,6 +23,13 @@ namespace mico { namespace parser {
 
         using type = lexer::tokens::type;
 
+        using prefix_parser_fun = std::function<ast::expression::uptr( )>;
+        using postfix_parser_fun =
+                  std::function<ast::expression::uptr(ast::expression *)>;
+
+        using prefix_call_map  = std::map<type, prefix_parser_fun>;
+        using postfix_call_map = std::map<type, postfix_parser_fun>;
+
         static
         token_itr next_itr( token_itr src, token_itr end )
         {
@@ -35,7 +43,9 @@ namespace mico { namespace parser {
             :tokens_(std::move(tok))
             ,current_(tokens_.begin( ))
             ,peek_(next_itr(current_, tokens_.end( )))
-        { }
+        {
+
+        }
 
         const lexer::tokens::info &current( ) const
         {
@@ -89,9 +99,9 @@ namespace mico { namespace parser {
                  ;
         }
 
-        std::unique_ptr<ast::identifier> parse_ident( )
+        std::unique_ptr<ast::ident_statement> parse_ident( )
         {
-            std::unique_ptr<ast::identifier> res(new ast::identifier);
+            std::unique_ptr<ast::ident_statement> res(new ast::ident_statement);
             res->value = current( ).literal;
             return std::move(res);
         }
@@ -169,7 +179,8 @@ namespace mico { namespace parser {
         token_itr   current_;
         token_itr   peek_;
         mutable std::vector<std::string> errors_;
-        //std::map<type, >
+        prefix_call_map  prefix_calls_;
+        postfix_call_map postfix_call_;
     };
 
 }}

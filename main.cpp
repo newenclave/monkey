@@ -16,9 +16,9 @@ int main(int argc, char *argv[])
 {
 
     std::string input =
-            "let x  5;             "
-            "let y = 10 ;            "
-            "let 838383;   "
+            "let x = 5;             "
+            "let y = 0x10 ;            "
+            "let octo = 037373;   "
             "return add(100);"
             "return 5+6;"
             ;
@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
     }
 
     for( auto &l: prog.states ) {
-        std::cout << l->token( ) << "\n";
+        std::cout << l->to_string( ) << "\n";
     }
 
 //    int result = Catch::Session( ).run( argc, argv );
