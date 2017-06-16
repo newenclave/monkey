@@ -14,6 +14,7 @@ namespace mico { namespace ast {
         STATE_IDENT,
         STATE_LET,
         STATE_RETURN,
+        STATE_EXPR,
 
         EXPRESSION_IDENT,
         EXPRESSION_INT,
@@ -145,6 +146,7 @@ namespace mico { namespace ast {
         {
             return lexer::tokens::type::RETURN;
         }
+
         std::string to_string( ) const
         {
             std::ostringstream oss;
@@ -152,7 +154,28 @@ namespace mico { namespace ast {
                 << (expr ? expr->to_string( ) : "<nill>") << ";";
             return oss.str( );
         }
-        std::unique_ptr<expression> expr;
+
+        expression::uptr expr;
+    };
+
+    struct expr_statement: public statement {
+
+        node_type type( ) const
+        {
+            return node_type::STATE_EXPR;
+        }
+
+        lexer::tokens::type token( ) const
+        {
+            return lexer::tokens::type::SEMICOLON;
+        }
+
+        std::string to_string( ) const
+        {
+            return expr->to_string( );
+        }
+
+        expression::uptr expr;
     };
 
     struct ident_expression: public expression {
@@ -160,11 +183,6 @@ namespace mico { namespace ast {
         node_type type( ) const
         {
             return node_type::EXPRESSION_IDENT;
-        }
-
-        lexer::tokens::type token( ) const
-        {
-            return lexer::tokens::type::IDENT;
         }
 
         std::string literal( ) const
@@ -185,11 +203,6 @@ namespace mico { namespace ast {
         node_type type( ) const
         {
             return node_type::EXPRESSION_INT;
-        }
-
-        lexer::tokens::type token( ) const
-        {
-            return lexer::tokens::type::INT;
         }
 
         std::string literal( ) const

@@ -30,6 +30,17 @@ namespace mico { namespace parser {
         using prefix_call_map  = std::map<type, prefix_parser_fun>;
         using postfix_call_map = std::map<type, postfix_parser_fun>;
 
+        enum class precedence {
+             LOWEST = 0
+            ,EQUALS
+             // ==
+            ,LESSGREATER // > or <
+            ,SUM // +
+            ,PRODUCT // *
+            ,PREFIX // -X or !X
+            ,CALL // myFunction(X)
+        };
+
         static
         token_itr next_itr( token_itr src, token_itr end )
         {
@@ -39,12 +50,76 @@ namespace mico { namespace parser {
             return src;
         }
 
+        static
+        std::int64_t char2value( char c )
+        {
+            switch (c) {
+            case '0': case '1': case '2': case '3': case '4':
+            case '5': case '6': case '7': case '8': case '9':
+                return std::int64_t(c - '0');
+            case 'a': case 'b': case 'c':
+            case 'd': case 'e': case 'f':
+                return std::int64_t(c - 'a' + 10);
+            case 'A': case 'B': case 'C':
+            case 'D': case 'E': case 'F':
+                return std::int64_t(c - 'A' + 10);
+            default:
+                break;
+            }
+            return -1;
+        }
+
+        int intbase2int( type t )
+        {
+            switch (t) {
+            case type::INT_OCT:
+                return 8;
+            case type::INT_BIN:
+                return 2;
+            case type::INT_HEX:
+                return 16;
+            default:
+                break;
+            }
+            return 10;
+        }
+
+        static
+        std::int64_t parse_int( std::string data, int s = 10 )
+        {
+            std::int64_t res = 0;
+            for( auto c: data ) {
+                res *= s;
+                auto next = char2value( c );
+                if( next < 0 ) {
+                    return -1;
+                }
+                res += next;
+            }
+            return res;
+        }
+
         token_reader( tokens_list tok )
             :tokens_(std::move(tok))
             ,current_(tokens_.begin( ))
             ,peek_(next_itr(current_, tokens_.end( )))
         {
+            prefix_calls_[type::IDENT] = [this]( ){
+                return parse_ident_expression( );
+            };
 
+            prefix_calls_[type::INT] = [this]( ){
+                return parse_int_expression( );
+            };
+            prefix_calls_[type::INT_BIN] = [this]( ){
+                return parse_int_expression( );
+            };
+            prefix_calls_[type::INT_OCT] = [this]( ){
+                return parse_int_expression( );
+            };
+            prefix_calls_[type::INT_HEX] = [this]( ){
+                return parse_int_expression( );
+            };
         }
 
         const lexer::tokens::info &current( ) const
@@ -97,6 +172,42 @@ namespace mico { namespace parser {
             return ( current_       == tokens_.end( ) )
                 || ( current_->name == type::END_OF_FILE )
                  ;
+        }
+
+        ast::expression::uptr parse_int_expression( )
+        {
+            std::unique_ptr<ast::int_expression>
+                                res(new ast::int_expression);
+
+            res->value = parse_int( current( ).literal,
+                                    intbase2int( current( ).name ) );
+
+            return res;
+        }
+
+        ast::expression::uptr parse_ident_expression( )
+        {
+            std::unique_ptr<ast::ident_expression>
+                                res(new ast::ident_expression);
+
+            res->value = current( ).literal;
+
+            return res;
+        }
+
+        std::unique_ptr<ast::expr_statement> parse_expression( precedence p )
+        {
+            std::unique_ptr<ast::expr_statement> res;
+
+            auto pref_call = prefix_calls_.find( current( ).name );
+            if( pref_call == prefix_calls_.end( ) ) {
+                return res;
+            }
+
+            res.reset(new ast::expr_statement);
+            res->expr = pref_call->second( );
+
+            return res;
         }
 
         std::unique_ptr<ast::ident_statement> parse_ident( )
@@ -156,6 +267,7 @@ namespace mico { namespace parser {
                     stmt = parse_return( );
                     break;
                 default:
+                    stmt = parse_expression( precedence::LOWEST );
                     break;
                 }
                 if( stmt ) {

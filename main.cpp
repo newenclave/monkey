@@ -12,6 +12,7 @@
 
 using namespace mico;
 
+
 int main(int argc, char *argv[])
 {
 
@@ -20,6 +21,10 @@ int main(int argc, char *argv[])
             "let y = 0x10 ;            "
             "let octo = 037373;   "
             "return add(100);"
+            "foobar;"
+            "1000;"
+            "01000;"
+            "0xFFFFFFFF;"
             "return 5+6;"
             ;
     auto tt  = lexer::tokens::all( );
@@ -34,7 +39,8 @@ int main(int argc, char *argv[])
     }
 
     for( auto &l: prog.states ) {
-        std::cout << l->to_string( ) << "\n";
+        std::cout << l->token( )
+                  << " " << l->to_string( ) << "\n";
     }
 
 //    int result = Catch::Session( ).run( argc, argv );
