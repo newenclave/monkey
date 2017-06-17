@@ -17,15 +17,16 @@ int main(int argc, char *argv[])
 {
 
     std::string input =
-            "let x = 5;             "
-            "let y = 0x10 ;            "
-            "let octo = 037373;   "
-            "return add(100);"
-            "foobar;"
-            "1000;"
-            "01000;"
-            "0xFFFFFFFF;"
-            "return 5+6;"
+//            "let x = 5;             "
+//            "let y = 0x10 ;            "
+//            "let octo = 037373;   "
+//            "return add(100);"
+//            "foobar;"
+//            "1_000_000_000;"
+//            "01000;"
+//            "0xFFFFFFFF;"
+//            "return 5+6;"
+            "5 > 4 == 3 < 4"
             ;
     auto tt  = lexer::tokens::all( );
     auto lst = lexer::tokens::get_list( tt, input.begin( ), input.end( ) );

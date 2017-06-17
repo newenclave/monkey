@@ -25,7 +25,8 @@ namespace mico { namespace parser {
 
         using prefix_parser_fun = std::function<ast::expression::uptr( )>;
         using postfix_parser_fun =
-                  std::function<ast::expression::uptr(ast::expression *)>;
+                  std::function<ast::expression::uptr(ast::expression::uptr)>;
+
 
         using prefix_call_map  = std::map<type, prefix_parser_fun>;
         using postfix_call_map = std::map<type, postfix_parser_fun>;
@@ -40,6 +41,7 @@ namespace mico { namespace parser {
             ,PREFIX // -X or !X
             ,CALL // myFunction(X)
         };
+        using precedence_map = std::map<type, precedence>;
 
         static
         token_itr next_itr( token_itr src, token_itr end )
@@ -120,6 +122,72 @@ namespace mico { namespace parser {
             prefix_calls_[type::INT_HEX] = [this]( ){
                 return parse_int_expression( );
             };
+
+            prefix_calls_[type::MINUS] = [this]( ) {
+                return parse_prefix( );
+            };
+            prefix_calls_[type::BANG] = [this]( ) {
+                return parse_prefix( );
+            };
+            prefix_calls_[type::PLUS] = [this]( ) {
+                return parse_prefix( );
+            };
+
+            precedences_[type::EQ]       = precedence::EQUALS;
+            precedences_[type::NOT_EQ]   = precedence::EQUALS;
+
+            precedences_[type::LT]       = precedence::LESSGREATER;
+            precedences_[type::GT]       = precedence::LESSGREATER;
+
+            precedences_[type::PLUS]     = precedence::SUM;
+            precedences_[type::MINUS]    = precedence::SUM;
+
+            precedences_[type::SLASH]    = precedence::PRODUCT;
+            precedences_[type::ASTERISK] = precedence::PRODUCT;
+
+            postfix_call_[type::PLUS] = [this](ast::expression::uptr expr) {
+                return parse_postfix( std::move(expr) );
+            };
+            postfix_call_[type::MINUS] = [this](ast::expression::uptr expr) {
+                return parse_postfix( std::move(expr) );
+            };
+            postfix_call_[type::SLASH] = [this](ast::expression::uptr expr) {
+                return parse_postfix( std::move(expr) );
+            };
+            postfix_call_[type::ASTERISK] = [this](ast::expression::uptr expr) {
+                return parse_postfix( std::move(expr) );
+            };
+            postfix_call_[type::EQ] = [this](ast::expression::uptr expr) {
+                return parse_postfix( std::move(expr) );
+            };
+            postfix_call_[type::NOT_EQ] = [this](ast::expression::uptr expr) {
+                return parse_postfix( std::move(expr) );
+            };
+            postfix_call_[type::LT] = [this](ast::expression::uptr expr) {
+                return parse_postfix( std::move(expr) );
+            };
+            postfix_call_[type::GT] = [this](ast::expression::uptr expr) {
+                return parse_postfix( std::move(expr) );
+            };
+
+        }
+
+        precedence cur_precedence( )
+        {
+            auto f = precedences_.find( current( ).name );
+            if( f != precedences_.end( ) ) {
+                return f->second;
+            }
+            return precedence::LOWEST;
+        }
+
+        precedence peek_precedence( )
+        {
+            auto f = precedences_.find( peek( ).name );
+            if( f != precedences_.end( ) ) {
+                return f->second;
+            }
+            return precedence::LOWEST;
         }
 
         const lexer::tokens::info &current( ) const
@@ -195,18 +263,30 @@ namespace mico { namespace parser {
             return res;
         }
 
-        std::unique_ptr<ast::expr_statement> parse_expression( precedence p )
+        ast::expression::uptr parse_expression( precedence p )
         {
-            std::unique_ptr<ast::expr_statement> res;
-
             auto pref_call = prefix_calls_.find( current( ).name );
             if( pref_call == prefix_calls_.end( ) ) {
-                return res;
+                return std::unique_ptr<ast::expression>( );
             }
 
-            res.reset(new ast::expr_statement);
-            res->expr = pref_call->second( );
+            auto left = pref_call->second( );
+            while( (peek( ).name != type::SEMICOLON) && (p < peek_precedence( )) ) {
+                auto infix = postfix_call_.find( peek( ).name );
+                if( infix != postfix_call_.end( ) ) {
+                    advance( );
+                    left = infix->second(std::move(left));
+                }
+            }
 
+            return left;
+        }
+
+        std::unique_ptr<ast::expr_statement>
+        parse_state_expression( precedence p )
+        {
+            std::unique_ptr<ast::expr_statement> res(new ast::expr_statement);
+            res->expr = parse_expression( p );
             return res;
         }
 
@@ -215,6 +295,34 @@ namespace mico { namespace parser {
             std::unique_ptr<ast::ident_statement> res(new ast::ident_statement);
             res->value = current( ).literal;
             return std::move(res);
+        }
+
+        std::unique_ptr<ast::prefix_expression> parse_prefix( )
+        {
+            std::unique_ptr<ast::prefix_expression>
+                    res(new ast::prefix_expression);
+
+            res->token = current( ).name;
+            advance( );
+            res->expr  = parse_expression( precedence::PREFIX );
+
+            return res;
+        }
+
+        std::unique_ptr<ast::infix_expression>
+        parse_postfix( ast::expression::uptr left )
+        {
+            std::unique_ptr<ast::infix_expression>
+                    res(new ast::infix_expression);
+
+            res->left = std::move(left);
+            res->token = current( ).name;
+
+            auto preced = cur_precedence( );
+            advance( );
+            res->right  = parse_expression( preced );
+
+            return res;
         }
 
         std::unique_ptr<ast::let_statement> parse_let( )
@@ -267,7 +375,7 @@ namespace mico { namespace parser {
                     stmt = parse_return( );
                     break;
                 default:
-                    stmt = parse_expression( precedence::LOWEST );
+                    stmt = parse_state_expression( precedence::LOWEST );
                     break;
                 }
                 if( stmt ) {
@@ -285,6 +393,7 @@ namespace mico { namespace parser {
         mutable std::vector<std::string> errors_;
         prefix_call_map  prefix_calls_;
         postfix_call_map postfix_call_;
+        precedence_map   precedences_;
     };
 
 }}

@@ -18,6 +18,8 @@ namespace mico { namespace ast {
 
         EXPRESSION_IDENT,
         EXPRESSION_INT,
+        EXPRESSION_PREFIX,
+        EXPRESSION_INFIX,
     };
 
     struct node {
@@ -218,6 +220,55 @@ namespace mico { namespace ast {
         }
 
         std::int64_t value;
+    };
+
+    struct prefix_expression: public expression {
+        node_type type( ) const
+        {
+            return node_type::EXPRESSION_PREFIX;
+        }
+
+        std::string literal( ) const
+        {
+            std::ostringstream oss;
+            oss << "(" << token << expr->to_string( ) << ")";
+            return oss.str( );
+        }
+
+        std::string to_string( ) const
+        {
+            return literal( );
+        }
+
+        lexer::tokens::type token;
+        expression::uptr    expr;
+    };
+
+    struct infix_expression: public expression {
+        node_type type( ) const
+        {
+            return node_type::EXPRESSION_INFIX;
+        }
+
+        std::string literal( ) const
+        {
+            std::ostringstream oss;
+            oss << "("
+                << left->to_string( )
+                << token
+                << right->to_string( )
+                << ")";
+            return oss.str( );
+        }
+
+        std::string to_string( ) const
+        {
+            return literal( );
+        }
+
+        expression::uptr    left;
+        lexer::tokens::type token;
+        expression::uptr    right;
     };
 }}
 
