@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
             "01000;"
             "0xFFFFFFFF;"
             "return 5+6;"
-            "5 > 4 == 3 < 4;"
+            "5 > 4 == 3 < 4, 8;"
             "a + b * c - d / f"
             ;
     auto tt  = lexer::tokens::all( );
