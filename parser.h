@@ -276,6 +276,8 @@ namespace mico { namespace parser {
                 if( infix != postfix_call_.end( ) ) {
                     advance( );
                     left = infix->second(std::move(left));
+                } else {
+                    return left;
                 }
             }
 
@@ -287,6 +289,7 @@ namespace mico { namespace parser {
         {
             std::unique_ptr<ast::expr_statement> res(new ast::expr_statement);
             res->expr = parse_expression( p );
+            advance( );
             return res;
         }
 
